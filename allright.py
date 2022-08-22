@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 from bot import send_message
 from dotenv import dotenv_values
@@ -23,8 +23,6 @@ PAYLOAD = {
     'grant_type': 'password',
     'username': login,
     'password': password,
-    'scope': 'login-form',
-    'client_id': 'fronendClient'
     }
 
 
@@ -36,13 +34,15 @@ def token(url, headers, payload):
 
 
 def lessons():
-    today = datetime.now().strftime('%Y-%m-%d')
-    url = f'https://allright.com/api/v1/lessons?filter[user_id]={me}&filter[upcomming][start]={today}'
+    now = datetime.now()
+    today = now.strftime('%Y-%m-%d')
+    tomorrow = (now + timedelta(days=1)).strftime('%Y-%m-%d')
+    url = f'https://allright.com/api/v1/lessons?filter[user_id]={me}&filter[from]={today}&filter[to]={tomorrow}'
+
     response = requests.get(
         url,
         headers={
         'authorization': f'Bearer {token(TOKEN_URL, HEADERS, PAYLOAD)}',
-        'User-Agent': user_agent
         }
     )
     lessons = response.json()
@@ -52,13 +52,18 @@ def lessons():
 def schedule(data):
     result = []
     for item in data['data']:
-        time = item['attributes']['time-start']
+        # только активные уроки
+        if item['attributes'].get('state') != 2:
+            continue
 
+        time = item['attributes']['time-start']
         # только сегодняшние занятия
         if datetime.today().strftime('%Y-%m-%d') == time[:10]:
-            
             # используя родительский id найти имя ребенка
-            parent_id = item['attributes']['student-id']
+            try:
+                parent_id = item['attributes']['student-id']
+            except KeyError:
+                continue
             for item in data['included']:
                 if int(item['id']) == parent_id:
                     student_id = item['relationships']['user-metum']['data']['id']
