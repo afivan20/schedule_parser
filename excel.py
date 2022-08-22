@@ -2,10 +2,14 @@ import gspread
 from datetime import date
 import calendar
 from bot import send_message
+import pathlib
+import os
 
 SHEET = 'schedule'
 WORKSHEET = 'Расписание'
+DIR = pathlib.Path(__file__).parent.resolve()
 CREDENTIALS = 'schedule-api-360016-0ff068011fd8.json'
+
 # номер колонки на странице Excel
 DAY = {
     'Monday':2,
@@ -18,7 +22,7 @@ DAY = {
     }
 
 def connect_excel():
-    sa = gspread.service_account(CREDENTIALS)
+    sa = gspread.service_account(os.path.join(DIR, CREDENTIALS))
     sheet = sa.open(SHEET) 
     worksheet = sheet.worksheet(WORKSHEET)
     return worksheet
@@ -39,6 +43,3 @@ def parse_excel():
 
 if __name__ == '__main__':
     parse_excel()
-
-
-

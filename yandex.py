@@ -2,8 +2,12 @@ import requests
 import datetime
 from bot import send_message
 from dotenv import dotenv_values
+import pathlib
+import os
 
-env = dotenv_values('.env')
+
+DIR = pathlib.Path(__file__).parent.resolve()
+env = dotenv_values(os.path.join(DIR, '.env'))
 secret1 = env['Session_id']
 secret2 = env['sessionid2']
 secret3 = env['english.auth-token']

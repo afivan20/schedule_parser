@@ -2,8 +2,11 @@ from datetime import datetime
 import requests
 from bot import send_message
 from dotenv import dotenv_values
+import pathlib
+import os
 
-env = dotenv_values('.env')
+DIR = pathlib.Path(__file__).parent.resolve()
+env = dotenv_values(os.path.join(DIR, '.env'))
 password = env['password']
 auth = env['authorization']
 login = env['email']
