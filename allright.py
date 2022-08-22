@@ -34,9 +34,8 @@ def token(url, headers, payload):
 
 
 def lessons():
-    now = datetime.now()
-    today = now.strftime('%Y-%m-%d')
-    tomorrow = (now + timedelta(days=1)).strftime('%Y-%m-%d')
+    today = datetime.utcnow()
+    tomorrow = today + timedelta(hours=24)
     url = f'https://allright.com/api/v1/lessons?filter[user_id]={me}&filter[from]={today}&filter[to]={tomorrow}'
 
     response = requests.get(
@@ -52,25 +51,25 @@ def lessons():
 def schedule(data):
     result = []
     for item in data['data']:
-        # только активные уроки
+        # только активные уроки (state=2)
         if item['attributes'].get('state') != 2:
             continue
+        
 
-        time = item['attributes']['time-start']
-        # только сегодняшние занятия
-        if datetime.today().strftime('%Y-%m-%d') == time[:10]:
-            # используя родительский id найти имя ребенка
-            try:
-                parent_id = item['attributes']['student-id']
-            except KeyError:
-                continue
-            for item in data['included']:
-                if int(item['id']) == parent_id:
-                    student_id = item['relationships']['user-metum']['data']['id']
-                    for i in data['included']:
-                        if student_id == i['id']:
-                            name = i['attributes']['child-name']
-                            result.append((name, time[:16]))
+        time = datetime.strptime(item['attributes']['time-start'], '%Y-%m-%dT%H:%M:%S.000Z')
+        Moscow_time = (time + timedelta(hours=3)).strftime('%Y-%m-%dT%H:%M')
+        # используя родительский id найти имя ребенка
+        try:
+            parent_id = item['attributes']['student-id']
+        except KeyError:
+            continue
+        for item in data['included']:
+            if int(item['id']) == parent_id:
+                student_id = item['relationships']['user-metum']['data']['id']
+                for i in data['included']:
+                    if student_id == i['id']:
+                        name = i['attributes']['child-name']
+                        result.append((name, Moscow_time))
     return result           
 
 def parse_allright():
