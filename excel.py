@@ -1,5 +1,5 @@
 import gspread
-from datetime import datetime
+from datetime import datetime, timedelta
 import calendar
 import pathlib
 import os
@@ -27,17 +27,37 @@ def connect_excel():
     return worksheet
 
 
+
+
 def parse_excel():
     worksheet = connect_excel()
-    date = datetime.now().date()
-    weekday=calendar.day_name[date.weekday()]
-    today = worksheet.col_values(DAY[weekday])
+    start = datetime.now()
+    start_date = start.date()
+    weekday=calendar.day_name[start_date.weekday()]
+    column = worksheet.col_values(DAY[weekday])
     result = []
-    for time, student in enumerate(today):
+    for i, student in enumerate(column):
         if student != '' and student != weekday:
-            time = worksheet.acell(f'A{time+1}').value
-            dt = datetime.strptime(f'{date}T{time}', '%Y-%m-%dT%H:%M')
-            unix_time =  int(datetime.timestamp(dt))
-            result.append((unix_time, student))
+            time = worksheet.acell(f'A{i+1}').value
+            dt = datetime.strptime(f'{start_date}T{time}', '%Y-%m-%dT%H:%M')
+            if start <= dt:
+                unix_time =  int(datetime.timestamp(dt))
+                result.append((unix_time, student))   
+    
+
+   
+
+
+    end = start+timedelta(hours=24)
+    end_date = end.date()
+    weekday=calendar.day_name[end_date.weekday()]
+    column = worksheet.col_values(DAY[weekday])
+    for i, student in enumerate(column):
+        if student != '' and student != weekday:
+            time = worksheet.acell(f'A{i+1}').value
+            dt = datetime.strptime(f'{end_date}T{time}', '%Y-%m-%dT%H:%M')
+            if start <= dt <= end:
+                unix_time =  int(datetime.timestamp(dt))
+                result.append((unix_time, student))
 
     return result
