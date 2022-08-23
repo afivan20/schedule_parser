@@ -20,7 +20,7 @@ headers = {
 def lessons_data():
     utc = datetime.datetime.utcnow()
     start = int(datetime.datetime.timestamp(utc))
-    end = int(datetime.datetime.timestamp(utc+datetime.timedelta(hours=24)))
+    end = int(datetime.datetime.timestamp(utc+datetime.timedelta(days=1)))
     url = f'https://practicum.yandex.ru/flow/api/tutor/speaking-sessions?from={start}&to={end}'
     r = requests.get(url, headers=headers)
     data = r.json()

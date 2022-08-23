@@ -37,7 +37,7 @@ def token(url, headers, payload):
 
 def lessons():
     today = datetime.utcnow()
-    tomorrow = today + timedelta(hours=24)
+    tomorrow = today + timedelta(days=1)
     url = f'https://allright.com/api/v1/lessons?filter[user_id]={me}&filter[from]={today}&filter[to]={tomorrow}'
 
     response = requests.get(
