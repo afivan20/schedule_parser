@@ -35,9 +35,9 @@ def token(url, headers, payload):
     return j['access_token']
 
 
-def lessons():
+def lessons(delta):
     today = datetime.utcnow()
-    tomorrow = today + timedelta(days=1)
+    tomorrow = today + timedelta(days=delta)
     url = f'https://allright.com/api/v1/lessons?filter[user_id]={me}&filter[from]={today}&filter[to]={tomorrow}'
 
     response = requests.get(
@@ -74,7 +74,7 @@ def schedule(data):
                         result.append((unix_time, name))
     return result           
 
-def parse_allright():
-    data = lessons()
+def parse_allright(delta=1):
+    data = lessons(delta)
     result = schedule(data)
     return result

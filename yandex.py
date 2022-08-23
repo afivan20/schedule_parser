@@ -17,18 +17,18 @@ headers = {
     'cookie': f'Session_id={secret1} sessionid2={secret2} english.auth-token={secret3}',
     }
 
-def lessons_data():
+def lessons_data(delta):
     utc = datetime.datetime.utcnow()
     start = int(datetime.datetime.timestamp(utc))
-    end = int(datetime.datetime.timestamp(utc+datetime.timedelta(days=1)))
+    end = int(datetime.datetime.timestamp(utc+datetime.timedelta(days=delta)))
     url = f'https://practicum.yandex.ru/flow/api/tutor/speaking-sessions?from={start}&to={end}'
     r = requests.get(url, headers=headers)
     data = r.json()
     return data
 
 
-def parse_yandex():
-    data = lessons_data()
+def parse_yandex(delta=1):
+    data = lessons_data(delta)
     result=[]
     for lesson in data['data']['speaking_sessions']:
         if lesson['state']=='scheduled':

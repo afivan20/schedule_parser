@@ -5,12 +5,26 @@ from datetime import datetime, timedelta
 from bot import send_message
 
 
-excel = parse_excel()
-yandex = parse_yandex()
-allright = parse_allright()
 
+try:
+    excel = parse_excel()
+except Exception as e:
+    send_message(text=f'excel-error: {e}')
+    excel = []
 
-schedule = [*excel, *allright, *yandex]
+try:
+    yandex = parse_yandex()
+except Exception as e:
+    send_message(text=f'yandex-error: {e}')
+    yandex = []
+
+try:
+    allright = parse_allright()
+except Exception as e:
+    send_message(text=f'allright-error: {e}')
+    allright = []
+
+schedule = yandex + allright + excel
 schedule.sort()
 
 text = ''

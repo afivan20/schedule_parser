@@ -28,11 +28,11 @@ def connect_excel():
 
 
 
-def parse_excel():
+def parse_excel(delta=1):
     worksheet = connect_excel()
     now = datetime.now()
     start = now
-    end = start+timedelta(days=1)
+    end = start+timedelta(days=delta)
     result = []
     while start <= end:
         weekday = start.strftime('%A')
