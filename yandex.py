@@ -27,20 +27,13 @@ def lessons_data():
     return data
 
 
-def parse_data():
+def parse_yandex():
     data = lessons_data()
     result=[]
     for lesson in data['data']['speaking_sessions']:
         if lesson['state']=='scheduled':
-            date = (datetime.datetime.utcfromtimestamp(lesson['start_at'])+datetime.timedelta(hours=3)).strftime('%H:%M')
+            date = lesson['start_at']
             time = date
             name = lesson['student']['public_name']
-            result.append((name, time))
+            result.append((time, name))
     return result
-
-def yandex_run():
-    result = parse_data()
-    send_message(f'Yandex - {result}')
-
-if __name__ == '__main__':
-    yandex_run()

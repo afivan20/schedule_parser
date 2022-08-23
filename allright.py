@@ -1,9 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import requests
-from bot import send_message
 from dotenv import dotenv_values
 import pathlib
 import os
+
+
+
 
 DIR = pathlib.Path(__file__).parent.resolve()
 env = dotenv_values(os.path.join(DIR, '.env'))
@@ -57,7 +59,7 @@ def schedule(data):
         
 
         time = datetime.strptime(item['attributes']['time-start'], '%Y-%m-%dT%H:%M:%S.000Z')
-        Moscow_time = (time + timedelta(hours=3)).strftime('%Y-%m-%dT%H:%M')
+        unix_time =  int(datetime.timestamp(time.replace(tzinfo=timezone.utc)))
         # используя родительский id найти имя ребенка
         try:
             parent_id = item['attributes']['student-id']
@@ -69,13 +71,10 @@ def schedule(data):
                 for i in data['included']:
                     if student_id == i['id']:
                         name = i['attributes']['child-name']
-                        result.append((name, Moscow_time))
+                        result.append((unix_time, name))
     return result           
 
 def parse_allright():
     data = lessons()
     result = schedule(data)
-    send_message(f'allright - {result}')
-
-if __name__ == '__main__':
-    parse_allright()
+    return result

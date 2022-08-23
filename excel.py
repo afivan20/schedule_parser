@@ -1,7 +1,6 @@
 import gspread
-from datetime import date
+from datetime import datetime
 import calendar
-from bot import send_message
 import pathlib
 import os
 
@@ -30,16 +29,15 @@ def connect_excel():
 
 def parse_excel():
     worksheet = connect_excel()
-    my_date = date.today()
-    weekday=calendar.day_name[my_date.weekday()]
+    date = datetime.now().date()
+    weekday=calendar.day_name[date.weekday()]
     today = worksheet.col_values(DAY[weekday])
     result = []
     for time, student in enumerate(today):
         if student != '' and student != weekday:
-            result.append((worksheet.acell(f'A{time+1}').value, student))
+            time = worksheet.acell(f'A{time+1}').value
+            dt = datetime.strptime(f'{date}T{time}', '%Y-%m-%dT%H:%M')
+            unix_time =  int(datetime.timestamp(dt))
+            result.append((unix_time, student))
 
-    send_message(f'private - {result}')
-
-
-if __name__ == '__main__':
-    parse_excel()
+    return result
