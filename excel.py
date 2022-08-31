@@ -26,24 +26,36 @@ def connect_excel():
     return worksheet
 
 
-
-
-def parse_excel(delta=1):
-    worksheet = connect_excel()
-    now = datetime.now()
-    start = now
-    end = start+timedelta(days=delta)
+def extract_data(worksheet, column, day):
     result = []
-    while start <= end:
-        weekday = start.strftime('%A')
+    for i, line in enumerate(column, start=1):
+        if i == 1: continue
+        if line != '':
+            time = worksheet.acell(f'A{i}').value
+            dt = datetime.strptime(f'{day}T{time}', '%Y-%m-%dT%H:%M')
+            unix_time =  int(datetime.timestamp(dt))
+            student = line
+            result.append((unix_time, student))
+    return result
+
+def get_excel(week=False):
+    
+    worksheet = connect_excel()
+    today = datetime.now().date()
+    weekday = today.strftime('%A')
+
+    if week:
+        monday = today - timedelta(days=today.weekday()) # Monday yyy-mm-dd
+        result = []
+        for i, column_number in enumerate(DAY.values()):
+            column = worksheet.col_values(column_number)
+            day = monday+(timedelta(days=i))
+            result += extract_data(worksheet, column, day )
+
+    else:
         column = worksheet.col_values(DAY[weekday])
-        for i, student in enumerate(column):
-            if student != '' and student != weekday:
-                time = worksheet.acell(f'A{i+1}').value
-                dt = datetime.strptime(f'{start.date()}T{time}', '%Y-%m-%dT%H:%M')
-                if now <= dt <= end:
-                    unix_time =  int(datetime.timestamp(dt))
-                    result.append((unix_time, student))
-        start += timedelta(days=1)
+        result = extract_data(worksheet, column, today)
 
     return result
+
+

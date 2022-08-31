@@ -1,10 +1,9 @@
 from datetime import datetime, timedelta, timezone
+from turtle import st
 import requests
 from dotenv import dotenv_values
 import pathlib
 import os
-
-
 
 
 DIR = pathlib.Path(__file__).parent.resolve()
@@ -35,11 +34,15 @@ def token(url, headers, payload):
     return j['access_token']
 
 
-def lessons(delta):
-    today = datetime.utcnow()
-    tomorrow = today + timedelta(days=delta)
-    url = f'https://allright.com/api/v1/lessons?filter[user_id]={me}&filter[from]={today}&filter[to]={tomorrow}'
-
+def allright_lessons(week=False):
+    start = datetime.now().date()
+    end = start + timedelta(days=2)
+    if week:
+        today = datetime.utcnow().today()
+        monday = (today - timedelta(days=(today.weekday()+1))).date()
+        start = monday
+        end = start + timedelta(days=8)
+    url = f'https://allright.com/api/v1/lessons?filter[user_id]={me}&filter[from]={start}&filter[to]={end}'
     response = requests.get(
         url,
         headers={
@@ -50,7 +53,7 @@ def lessons(delta):
     return lessons
 
 
-def schedule(data):
+def get_allright(data):
     result = []
     for item in data['data']:
         # только активные уроки (state=2)
@@ -73,8 +76,3 @@ def schedule(data):
                         name = i['attributes']['child-name']
                         result.append((unix_time, name))
     return result           
-
-def parse_allright(delta=1):
-    data = lessons(delta)
-    result = schedule(data)
-    return result
