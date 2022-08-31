@@ -53,4 +53,3 @@ def schedule(week=False):
     else:
         send_message(text='Ничего не найдено.')
 
-

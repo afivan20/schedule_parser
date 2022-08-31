@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from turtle import st
 import requests
 from dotenv import dotenv_values
 import pathlib

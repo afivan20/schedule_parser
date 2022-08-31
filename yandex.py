@@ -1,6 +1,5 @@
 import requests
 import datetime
-from bot import send_message
 from dotenv import dotenv_values
 import pathlib
 import os
