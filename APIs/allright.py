@@ -1,11 +1,12 @@
-from datetime import datetime, timedelta, timezone
-import requests
 from dotenv import dotenv_values
+
+from datetime import datetime, timedelta, timezone
+import aiohttp
 import pathlib
 import os
 
 
-DIR = pathlib.Path(__file__).parent.resolve()
+DIR = pathlib.Path(__file__).parent.parent.resolve()
 env = dotenv_values(os.path.join(DIR, '.env'))
 password = env['password']
 auth = env['authorization']
@@ -26,33 +27,33 @@ PAYLOAD = {
     }
 
 
-def token(url, headers, payload):
-    session = requests.Session()
-    r = session.post(url, headers=headers, data=payload)
-    j = r.json()
+async def get_token_allright(url: str, headers: dict, payload: dict, session: aiohttp.ClientSession):
+    async with session.post(url, data=payload, headers=headers, ssl=False) as r:
+        j = await r.json()
     return j['access_token']
 
 
-def allright_lessons(week=False):
+async def fetch_allright(week=False):
     start = datetime.now().date()
-    end = start + timedelta(days=2)
+    end = start + timedelta(days=1)
     if week:
         today = datetime.utcnow().today()
         monday = (today - timedelta(days=(today.weekday()+1))).date()
         start = monday
         end = start + timedelta(days=8)
     url = f'https://allright.com/api/v1/lessons?filter[user_id]={me}&filter[from]={start}&filter[to]={end}'
-    response = requests.get(
-        url,
-        headers={
-        'authorization': f'Bearer {token(TOKEN_URL, HEADERS, PAYLOAD)}',
-        }
-    )
-    lessons = response.json()
+    async with aiohttp.ClientSession() as session:
+        token_allright = await get_token_allright(TOKEN_URL, HEADERS, PAYLOAD, session)
+        async with session.get(
+            url,
+            ssl=False,
+            headers={'authorization': f'Bearer {token_allright}'}) as response:
+            lessons = await response.json()
     return lessons
 
 
-def get_allright(data):
+async def extract_allright(week=False):
+    data = await fetch_allright(week)
     result = []
     for item in data['data']:
         # только активные уроки (state=2)

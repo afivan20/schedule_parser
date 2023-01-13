@@ -130,3 +130,7 @@ dmypy.json
 
 # CREDENTIALS json
 schedule-api-*
+.schedule-api-*
+
+# STATIC
+static/
