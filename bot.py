@@ -146,10 +146,8 @@ async def notify_everyday(context: ContextTypes.DEFAULT_TYPE):
     text = output(successful)
     await context.bot.send_message(chat_id=ME, parse_mode ='HTML', text=text)
     # send notification to a user if any data is absent
-    for i, data in enumerate(extracted):
-        if isinstance(data, Exception):
-            logger.warning(f'Нет ответа от {tuple(REQUESTS.keys())[i]}', exc_info=data)
-            await context.bot.send_message(chat_id=ME, text=f'Нет данных от {tuple(REQUESTS.keys())[i]}')
+    for api in is_exception(extracted):
+        await context.bot.send_message(chat_id=ME, text=f'Нет данных от {api}')
 
 start_handler = CommandHandler('start', start)
 today_handler = CommandHandler('today', today, block=False, filters=filters.User(user_id=ME))
