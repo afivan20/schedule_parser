@@ -63,6 +63,14 @@ def output(data: list) -> str:
         return 'Ничего не найдено.'
 
 
+def is_exception(extracted: list) -> list[str]:
+    res = []
+    for i, data in enumerate(extracted):
+        if isinstance(data, Exception):
+            logger.warning(f'Нет ответа от {tuple(REQUESTS.keys())[i]}', exc_info=data)
+            res.append(tuple(REQUESTS.keys())[i])
+    return res
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat = update.effective_chat
     button = KeyboardButton('Отправить телефон ✅', request_contact=True)
@@ -79,41 +87,33 @@ async def today(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = output(successful)
     await context.bot.send_message(chat_id=update.message.chat.id, parse_mode ='HTML', text=text)
 
-    # send notification to a user if any data is absent
-    for i, data in enumerate(extracted):
-        if isinstance(data, Exception):
-            logger.warning(f'Нет ответа от {tuple(REQUESTS.keys())[i]}', exc_info=data)
-            await context.bot.send_message(chat_id=update.message.chat.id, text=f'Нет данных от {tuple(REQUESTS.keys())[i]}')
+
+    for api in is_exception(extracted):
+        await context.bot.send_message(chat_id=update.message.chat.id, text=f'Нет данных от {api}')
 
 
 async def week(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     all_week = True
-    exctracted = await asyncio.gather(*(func(all_week) for func in REQUESTS.values()), return_exceptions=True )
+    extracted = await asyncio.gather(*(func(all_week) for func in REQUESTS.values()), return_exceptions=True )
 
-    successful: list = sum(filter(lambda resp: not isinstance(resp, Exception), exctracted), [])
+    successful: list = sum(filter(lambda resp: not isinstance(resp, Exception), extracted), [])
     text = output(successful)
     await context.bot.send_message(chat_id=update.message.chat.id, parse_mode ='HTML', text=text)
 
-    # send notification to a user if any data is absent
-    for i, data in enumerate(exctracted):
-        if isinstance(data, Exception):
-            logger.warning(f'Нет ответа от {tuple(REQUESTS.keys())[i]}', exc_info=data)
-            await context.bot.send_message(chat_id=update.message.chat.id, text=f'Нет данных от {tuple(REQUESTS.keys())[i]}')
+    for api in is_exception(extracted):
+        await context.bot.send_message(chat_id=update.message.chat.id, text=f'Нет данных от {api}')
 
 async def next_week(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     all_week = True
     next_week = 7
-    exctracted = await asyncio.gather(*(func(all_week, next_week) for func in REQUESTS.values()), return_exceptions=True )
+    extracted = await asyncio.gather(*(func(all_week, next_week) for func in REQUESTS.values()), return_exceptions=True )
 
-    successful: list = sum(filter(lambda resp: not isinstance(resp, Exception), exctracted), [])
+    successful: list = sum(filter(lambda resp: not isinstance(resp, Exception), extracted), [])
     text = output(successful)
     await context.bot.send_message(chat_id=update.message.chat.id, parse_mode ='HTML', text=text)
 
-    # send notification to a user if any data is absent
-    for i, data in enumerate(exctracted):
-        if isinstance(data, Exception):
-            logger.warning(f'Нет ответа от {tuple(REQUESTS.keys())[i]}', exc_info=data)
-            await context.bot.send_message(chat_id=update.message.chat.id, text=f'Нет данных от {tuple(REQUESTS.keys())[i]}')
+    for api in is_exception(extracted):
+        await context.bot.send_message(chat_id=update.message.chat.id, text=f'Нет данных от {api}')
 
 
 async def contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -141,10 +141,15 @@ async def request(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def notify_everyday(context: ContextTypes.DEFAULT_TYPE):
-    all_data: list[list] = await asyncio.gather(extract_uchi_doma(), extract_yandex(), main(), extract_allright()) 
-    all_data: list = sum(all_data, []) # сложить все списки
-    text = output(all_data)
+    extracted: list[list] = await asyncio.gather(*(func() for func in REQUESTS.values()), return_exceptions=True) 
+    successful: list = sum(filter(lambda resp: not isinstance(resp, Exception), extracted), []) # сложить все списки
+    text = output(successful)
     await context.bot.send_message(chat_id=ME, parse_mode ='HTML', text=text)
+    # send notification to a user if any data is absent
+    for i, data in enumerate(extracted):
+        if isinstance(data, Exception):
+            logger.warning(f'Нет ответа от {tuple(REQUESTS.keys())[i]}', exc_info=data)
+            await context.bot.send_message(chat_id=ME, text=f'Нет данных от {tuple(REQUESTS.keys())[i]}')
 
 start_handler = CommandHandler('start', start)
 today_handler = CommandHandler('today', today, block=False, filters=filters.User(user_id=ME))
