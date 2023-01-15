@@ -8,11 +8,12 @@ import logging
 from datetime import datetime, timedelta, time
 import pathlib
 import os
+import typing
 
-from APIs.uchi_doma import extract_uchi_doma
+from APIs.uchi_ru import extract_uchi_ru
 from APIs.yandex import extract_yandex
 from APIs.allright import extract_allright
-from APIs.asyncio_excel import  main
+from APIs.excel import  asyncio_excel
 
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s - %(message)s", datefmt='%b-%d-%Y %H:%M:%S %p', level=logging.INFO)
@@ -28,6 +29,13 @@ application = ApplicationBuilder().token(token).build()
 
 
 CONTACTS = {}
+
+REQUESTS = {
+    'excel': asyncio_excel,
+    'allright': extract_allright,
+    'yandex': extract_yandex,
+    'uchi_ru': extract_uchi_ru
+}
 
 
 def output(data: list) -> str:
@@ -66,18 +74,46 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def today(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    all_data: list[list] = await asyncio.gather(extract_uchi_doma(), extract_yandex(), main(), extract_allright()) 
-    all_data: list = sum(all_data, []) # сложить все списки
-    text = output(all_data)
+    extracted: list[list] = await asyncio.gather(*(func() for func in REQUESTS.values()), return_exceptions=True) 
+    successful: list = sum(filter(lambda resp: not isinstance(resp, Exception), extracted), []) # сложить все списки
+    text = output(successful)
     await context.bot.send_message(chat_id=update.message.chat.id, parse_mode ='HTML', text=text)
+
+    # send notification to a user if any data is absent
+    for i, data in enumerate(extracted):
+        if isinstance(data, Exception):
+            logger.warning(f'Нет ответа от {tuple(REQUESTS.keys())[i]}', exc_info=data)
+            await context.bot.send_message(chat_id=update.message.chat.id, text=f'Нет данных от {tuple(REQUESTS.keys())[i]}')
 
 
 async def week(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     all_week = True
-    all_data: list[list] = await asyncio.gather(extract_uchi_doma(all_week), extract_yandex(all_week), main(all_week), extract_allright(all_week)) 
-    all_data: list = sum(all_data, [])
-    text = output(all_data)
+    exctracted = await asyncio.gather(*(func(all_week) for func in REQUESTS.values()), return_exceptions=True )
+
+    successful: list = sum(filter(lambda resp: not isinstance(resp, Exception), exctracted), [])
+    text = output(successful)
     await context.bot.send_message(chat_id=update.message.chat.id, parse_mode ='HTML', text=text)
+
+    # send notification to a user if any data is absent
+    for i, data in enumerate(exctracted):
+        if isinstance(data, Exception):
+            logger.warning(f'Нет ответа от {tuple(REQUESTS.keys())[i]}', exc_info=data)
+            await context.bot.send_message(chat_id=update.message.chat.id, text=f'Нет данных от {tuple(REQUESTS.keys())[i]}')
+
+async def next_week(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    all_week = True
+    next_week = 7
+    exctracted = await asyncio.gather(*(func(all_week, next_week) for func in REQUESTS.values()), return_exceptions=True )
+
+    successful: list = sum(filter(lambda resp: not isinstance(resp, Exception), exctracted), [])
+    text = output(successful)
+    await context.bot.send_message(chat_id=update.message.chat.id, parse_mode ='HTML', text=text)
+
+    # send notification to a user if any data is absent
+    for i, data in enumerate(exctracted):
+        if isinstance(data, Exception):
+            logger.warning(f'Нет ответа от {tuple(REQUESTS.keys())[i]}', exc_info=data)
+            await context.bot.send_message(chat_id=update.message.chat.id, text=f'Нет данных от {tuple(REQUESTS.keys())[i]}')
 
 
 async def contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -113,6 +149,7 @@ async def notify_everyday(context: ContextTypes.DEFAULT_TYPE):
 start_handler = CommandHandler('start', start)
 today_handler = CommandHandler('today', today, block=False, filters=filters.User(user_id=ME))
 week_handler = CommandHandler('week', week, block=False, filters=filters.User(user_id=ME))
+next_week_handler = CommandHandler('next_week', next_week, block=False, filters=filters.User(user_id=ME))
 contact_handler = MessageHandler(filters.CONTACT, contact)
 text_handler =  MessageHandler(filters.Text(['правила', 'реквизиты для оплаты']), request)
 
@@ -121,6 +158,7 @@ if __name__ == '__main__':
     application.add_handler(start_handler)
     application.add_handler(today_handler)
     application.add_handler(week_handler)
+    application.add_handler(next_week_handler)
     application.add_handler(contact_handler)
     application.add_handler(text_handler)
 

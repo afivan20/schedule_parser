@@ -33,11 +33,11 @@ async def get_token_allright(url: str, headers: dict, payload: dict, session: ai
     return j['access_token']
 
 
-async def fetch_allright(week=False):
+async def fetch_allright(week=False, next_week=0):
     start = datetime.now().date()
     end = start + timedelta(days=1)
     if week:
-        today = datetime.utcnow().today()
+        today = datetime.utcnow().today() + timedelta(days=next_week)
         monday = (today - timedelta(days=(today.weekday()+1))).date()
         start = monday
         end = start + timedelta(days=8)
@@ -52,8 +52,8 @@ async def fetch_allright(week=False):
     return lessons
 
 
-async def extract_allright(week=False):
-    data = await fetch_allright(week)
+async def extract_allright(week=False, next_week=0):
+    data = await fetch_allright(week, next_week)
     result = []
     for item in data['data']:
         # только активные уроки (state=2)

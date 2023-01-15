@@ -34,13 +34,13 @@ async def get_worksheet(agcm: AsyncioGspreadClientManager, sheet_name: str, work
     worksheet = await sheet.worksheet(worksheet_name)
     return worksheet
 
-async def extract_excel(worksheet: AsyncioGspreadWorksheet, week_of_day: int, all_week=False):
+async def extract_excel(worksheet: AsyncioGspreadWorksheet, all_week=False, next_week=0):
     data: list[list] = await worksheet.batch_get([f"{col}2:{col}30"for col in ('ABCDEFGH')]) # get all data from columns A-H
     today = datetime.now().date()
-    monday = today - timedelta(days=today.weekday()) # Monday yyy-mm-dd
+    monday = today - timedelta(days=today.weekday())+timedelta(days=next_week) # Monday yyy-mm-dd
+    week_of_day = 1 if all_week else DAY[datetime.now().date().strftime('%A')]
+
     result = []
-    if all_week:
-        week_of_day = 1
     while week_of_day <= 7:
         for i, row in enumerate(data[week_of_day]): # iterate by column's rows (итерируемся по строкам в столбце)
             if row: # name of the student
@@ -56,14 +56,13 @@ async def extract_excel(worksheet: AsyncioGspreadWorksheet, week_of_day: int, al
 
 
 
-async def main(week=False):
+async def asyncio_excel(week=False, next_week=0):
     global TEMP_WORKSHEET
     if TEMP_WORKSHEET is None:
         agcm = gspread_asyncio.AsyncioGspreadClientManager(get_creds) # ClientManger gets credentials
         worksheet =  await asyncio.create_task(get_worksheet(agcm, "schedule", "Расписание")) # get the worksheet
         TEMP_WORKSHEET = worksheet # save worksheet, to reuse quicker
-    wod: int = DAY[datetime.now().date().strftime('%A')]
-    extracted_data = await extract_excel(TEMP_WORKSHEET, wod, week)
+    extracted_data = await extract_excel(TEMP_WORKSHEET, week, next_week)
     return extracted_data
 
 
