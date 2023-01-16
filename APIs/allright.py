@@ -1,6 +1,6 @@
 from dotenv import dotenv_values
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, time
 import aiohttp
 import pathlib
 import os
@@ -35,13 +35,14 @@ async def get_token_allright(url: str, headers: dict, payload: dict, session: ai
 
 async def fetch_allright(week=False, next_week=0):
     start = datetime.now().date()
-    end = start + timedelta(days=1)
+    end = start
     if week:
         today = datetime.utcnow().today() + timedelta(days=next_week)
         monday = (today - timedelta(days=(today.weekday()+1))).date()
-        start = monday
-        end = start + timedelta(days=8)
-    url = f'https://allright.com/api/v1/lessons?filter[user_id]={me}&filter[from]={start}&filter[to]={end}'
+        start = monday 
+        end = start + timedelta(days=7)
+    print(end)
+    url = f'https://allright.com/api/v1/lessons?filter[user_id]={me}&filter[from]={start}T21:00:00.000Z&filter[to]={end}T21:00:00.000Z'
     async with aiohttp.ClientSession() as session:
         token_allright = await get_token_allright(TOKEN_URL, HEADERS, PAYLOAD, session)
         async with session.get(

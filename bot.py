@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, timedelta, time
 import pathlib
 import os
-import typing
+
 
 from APIs.uchi_ru import extract_uchi_ru
 from APIs.yandex import extract_yandex
@@ -136,8 +136,6 @@ async def request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif update.message.text == 'реквизиты для оплаты':
         logger.warning(f'Запрос реквизитов от {update.message.chat.id}: {CONTACTS[update.message.chat.id]}')
         await context.bot.send_message(chat_id=chat_id, text=BANK)
-    else:
-        return
 
 
 async def notify_everyday(context: ContextTypes.DEFAULT_TYPE):
