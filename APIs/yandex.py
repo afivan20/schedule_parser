@@ -1,11 +1,12 @@
 from dotenv import dotenv_values
 
 import aiohttp
+from aiohttp import ClientTimeout
 import datetime
 import pathlib
 import os
 import time as t
-
+from util import async_timed
 
 DIR = pathlib.Path(__file__).parent.parent.resolve()
 env = dotenv_values(os.path.join(DIR, '.env'))
@@ -27,13 +28,14 @@ async def fetch_yandex(week: bool, next_week=0):
         start = int(t.mktime(monday.timetuple()))
         end = start + 604800
     url = f'https://practicum.yandex.ru/flow/api/tutor/speaking-sessions?from={start}&to={end}'
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=ClientTimeout(total=3)) as session:
         async with session.get(url,ssl=False, headers=headers) as response:
             data = await response.json()
             return data['data']['speaking_sessions']
 
-
+@async_timed()
 async def extract_yandex(week=False, next_week=0):
+
     result=[]
     data = await fetch_yandex(week, next_week)
     for lesson in data:

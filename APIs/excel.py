@@ -6,7 +6,7 @@ import asyncio
 from datetime import datetime, timedelta
 import pathlib
 import os
-
+from util import async_timed, async_timeout
 # номер колонки на странице Excel
 DAY = {
     'Monday':1,
@@ -28,7 +28,6 @@ def get_creds():
 
 
 async def get_worksheet(agcm: AsyncioGspreadClientManager, sheet_name: str, worksheet_name: str):
-
     agc = await agcm.authorize()
     sheet = await agc.open(sheet_name)
     worksheet = await sheet.worksheet(worksheet_name)
@@ -54,8 +53,8 @@ async def extract_excel(worksheet: AsyncioGspreadWorksheet, all_week=False, next
         if not all_week: break
     return result
 
-
-
+@async_timed()
+@async_timeout(5)
 async def asyncio_excel(week=False, next_week=0):
     global TEMP_WORKSHEET
     if TEMP_WORKSHEET is None:

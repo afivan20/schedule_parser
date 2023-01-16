@@ -1,10 +1,12 @@
 from dotenv import dotenv_values
+from aiohttp import ClientTimeout
 
-from datetime import datetime, timedelta, timezone, time
+from datetime import datetime, timedelta, timezone
 import aiohttp
 import pathlib
 import os
 
+from util import async_timed
 
 DIR = pathlib.Path(__file__).parent.parent.resolve()
 env = dotenv_values(os.path.join(DIR, '.env'))
@@ -13,6 +15,7 @@ auth = env['authorization']
 login = env['email']
 user_agent = env['user_agent']
 me = env['me']
+token_allright=env['token_allright']
 
 
 TOKEN_URL = 'https://allright.com/oauth/token'
@@ -30,21 +33,21 @@ PAYLOAD = {
 async def get_token_allright(url: str, headers: dict, payload: dict, session: aiohttp.ClientSession):
     async with session.post(url, data=payload, headers=headers, ssl=False) as r:
         j = await r.json()
+        
     return j['access_token']
 
 
 async def fetch_allright(week=False, next_week=0):
-    start = datetime.now().date()
+    start = datetime.now().date() 
     end = start
     if week:
         today = datetime.utcnow().today() + timedelta(days=next_week)
-        monday = (today - timedelta(days=(today.weekday()+1))).date()
+        monday = (today - timedelta(days=(today.weekday()))).date()
         start = monday 
-        end = start + timedelta(days=7)
-    print(end)
-    url = f'https://allright.com/api/v1/lessons?filter[user_id]={me}&filter[from]={start}T21:00:00.000Z&filter[to]={end}T21:00:00.000Z'
-    async with aiohttp.ClientSession() as session:
-        token_allright = await get_token_allright(TOKEN_URL, HEADERS, PAYLOAD, session)
+        end = start + timedelta(days=6)
+    url = f'https://allright.com/api/v1/lessons?filter[user_id]={me}&filter[from]={start}&filter[to]={end}T21:00:00.000Z'
+    async with aiohttp.ClientSession(timeout=ClientTimeout(total=3)) as session:
+        # token_allright = await get_token_allright(TOKEN_URL, HEADERS, PAYLOAD, session) # можно использовать старый токен
         async with session.get(
             url,
             ssl=False,
@@ -52,7 +55,7 @@ async def fetch_allright(week=False, next_week=0):
             lessons = await response.json()
     return lessons
 
-
+@async_timed()
 async def extract_allright(week=False, next_week=0):
     data = await fetch_allright(week, next_week)
     result = []

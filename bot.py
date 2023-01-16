@@ -82,6 +82,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def today(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+
     extracted: list[list] = await asyncio.gather(*(func() for func in REQUESTS.values()), return_exceptions=True) 
     successful: list = sum(filter(lambda resp: not isinstance(resp, Exception), extracted), []) # сложить все списки
     text = output(successful)

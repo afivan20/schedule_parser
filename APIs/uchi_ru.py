@@ -1,11 +1,12 @@
 from dotenv import dotenv_values
+from aiohttp import ClientTimeout
 
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 import aiohttp
 import pathlib
 import os
-
+from util import async_timed
 
 DIR = pathlib.Path(__file__).parent.parent.resolve()
 env = dotenv_values(os.path.join(DIR, '.env'))
@@ -17,12 +18,12 @@ async def fetch_uchi_ru(next_week=0):
     monday = (today - timedelta(days=(today.weekday()+1))).date()+timedelta(days=next_week)
     url = f'http://app.doma.uchi.ru/api/v1/teacher/calendar_events?start_date={monday}'
     cookies={"distance_learning_uid":distance_learning_uid}
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=ClientTimeout(total=3)) as session:
         async with session.get(url ,ssl=False, cookies=cookies) as response:
             data = await response.json()
     return data['calendar_events']
 
-
+@async_timed()
 async def extract_uchi_ru(week=False, next_week=0):
     result = []
     data = await fetch_uchi_ru(next_week)
