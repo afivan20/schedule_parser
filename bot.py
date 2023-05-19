@@ -14,6 +14,7 @@ from APIs.uchi_ru import extract_uchi_ru
 from APIs.yandex import extract_yandex
 from APIs.allright import extract_allright
 from APIs.excel import  asyncio_excel
+from APIs.gb import extract_gb
 
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s - %(message)s", datefmt='%b-%d-%Y %H:%M:%S %p', level=logging.INFO)
@@ -34,7 +35,8 @@ REQUESTS = {
     'excel': asyncio_excel,
     'allright': extract_allright,
     'yandex': extract_yandex,
-    'uchi_ru': extract_uchi_ru
+    'uchi_ru': extract_uchi_ru,
+    'geek_brains': extract_gb,
 }
 
 

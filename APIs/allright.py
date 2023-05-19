@@ -50,9 +50,10 @@ async def fetch_allright(week=False, next_week=0):
         # token_allright = await get_token_allright(TOKEN_URL, HEADERS, PAYLOAD, session) # можно использовать старый токен
         async with session.get(
             url,
-            ssl=False,
-            headers={'authorization': f'Bearer {token_allright}'}) as response:
+            ssl=True,
+            headers={'authorization': f'Basic {token_allright}'}) as response:
             lessons = await response.json()
+            
     return lessons
 
 @async_timed()
@@ -68,15 +69,20 @@ async def extract_allright(week=False, next_week=0):
         time = datetime.strptime(item['attributes']['time-start'], '%Y-%m-%dT%H:%M:%S.000Z')
         unix_time =  int(datetime.timestamp(time.replace(tzinfo=timezone.utc)))
         # используя родительский id найти имя ребенка
-        try:
-            parent_id = item['attributes']['student-id']
-        except KeyError:
-            continue
-        for item in data['included']:
-            if int(item['id']) == parent_id:
-                student_id = item['relationships']['user-metum']['data']['id']
-                for i in data['included']:
-                    if student_id == i['id']:
-                        name = i['attributes']['child-name']
-                        result.append((unix_time, name))
+        # try:
+        #     parent_id = item['attributes']['student-id']
+        # except KeyError:
+        #     continue
+        # for item in data['included']:
+        #     if int(item['id']) == parent_id:
+        #         student_id = item['relationships']['user-metum']['data']['id']
+        #         for i in data['included']:
+        #             if student_id == i['id']:
+        #                 name = i['attributes']['child-name']
+        #                 result.append((unix_time, name))
+
+        # вместо имени будет время окнчания урока
+        time_end = datetime.strptime(item['attributes']['time-end'], '%Y-%m-%dT%H:%M:%S.000Z')
+        time_end += timedelta(hours=3)
+        result.append((unix_time, time_end.strftime('%H:%M')))
     return result           

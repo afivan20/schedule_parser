@@ -25,3 +25,4 @@ def async_timeout(seconds):
             return await asyncio.wait_for(func(*args, **kwargs), timeout=seconds)
         return wrapper
     return decorator
+
